@@ -21,7 +21,7 @@ fn create_blocking_test_app() -> BlockingTestApp {
         endpoint: server.uri(),
         bearer_token: Uuid::new_v4().to_string(),
     };
-    let client = Client::new(config, None).unwrap();
+    let client = Client::new(config, None, None).unwrap();
     let test_app = BlockingTestApp { client, server };
     test_app
 }

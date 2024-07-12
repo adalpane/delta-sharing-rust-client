@@ -30,6 +30,7 @@ impl Client {
     pub async fn new(
         provider_config: ProviderConfig,
         data_root: Option<String>,
+        capabilities: Option<HashMap<String, String>>
     ) -> Result<Self, anyhow::Error> {
         if provider_config.share_credentials_version > CREDENTIALS_VERSION {
             return Err(anyhow::anyhow!("'share_credentials_version' in the provider configuration is {}, which is newer than the \
@@ -39,7 +40,7 @@ impl Client {
         }
         let cache: HashMap<String, FileCache> = HashMap::new();
         Ok(Self {
-            http_client: Self::get_client(&provider_config)?,
+            http_client: Self::get_client(&provider_config, capabilities.unwrap_or_default())?,
             base_url: Self::build_base_url(&provider_config.endpoint)?,
             data_root: data_root.unwrap_or(
                 env::temp_dir()
@@ -53,7 +54,7 @@ impl Client {
         })
     }
 
-    fn get_client(config: &ProviderConfig) -> Result<reqwest::Client, anyhow::Error> {
+    fn get_client(config: &ProviderConfig, capabilities: HashMap<String, String>) -> Result<reqwest::Client, anyhow::Error> {
         let rust_version: &str = &format!("{}", rustc_version_runtime::version());
         let user_agent: &str = &format!("Delta-Sharing-Rust/{VERSION} Rust/{rust_version}");
         let bearer_token = &format!("Bearer {}", config.bearer_token);
@@ -67,6 +68,11 @@ impl Client {
             header::USER_AGENT,
             header::HeaderValue::from_str(user_agent)
                 .map_err(|e| anyhow::anyhow!("Error setting user agent header:{e}"))?,
+        );
+        headers.insert(
+            header::HeaderName::from_static("delta-sharing-capabilities"),
+            header::HeaderValue::from_str(&capabilities.iter().map(|(k,v)| format!("{k}={v}")).collect::<Vec<String>>().join(";"))
+                .map_err(|e| anyhow::anyhow!("Error setting delta-sharing-capabilities header:{e}"))?,
         );
         reqwest::Client::builder().default_headers(headers).build()
             .map_err(|e| anyhow::anyhow!("Error building Http client: {e}"))
@@ -371,6 +377,6 @@ mod tests {
             endpoint: "https://sharing.delta.io/delta-sharing/".to_string(),
             bearer_token: "token".to_string(),
         };
-        let _ = super::Client::new(config, None).await.unwrap();
+        let _ = super::Client::new(config, None, None).await.unwrap();
     }
 }

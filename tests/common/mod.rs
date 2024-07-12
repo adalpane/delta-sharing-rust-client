@@ -30,7 +30,7 @@ pub async fn create_test_app() -> TestApp {
         endpoint: server.uri(),
         bearer_token: Uuid::new_v4().to_string(),
     };
-    let client = Client::new(config, None).await.unwrap();
+    let client = Client::new(config, None, None).await.unwrap();
     let app = TestApp { client, server };
     app
 }
