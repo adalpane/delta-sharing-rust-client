@@ -74,7 +74,7 @@ fn get_dataframe() {
         "shares/{}/schemas/{}/tables/{}/query",
         table.share, table.schema, table.name
     );
-    let mut file: File =
+    let mut file: ParquetFile =
         serde_json::from_str(common::TEST_FILE_RESPONSE).expect("Invalid file info");
     let file_url_path = "/shares/test.parquet";
     file.url = format!("{}{}", &app.server.uri(), &file_url_path);

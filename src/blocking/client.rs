@@ -261,9 +261,22 @@ impl Client {
         fs::create_dir_all(&table_path).map_err(|e| anyhow::anyhow!("Error creating table path: {e}"))?;
         let mut file_paths: Vec<PathBuf> = Vec::new();
         for file in table_files.files.clone() {
-            let dst_path = &table_path.join(format!("{}.snappy.parquet", &file.id));
-            let _ = self.download(file.url, &dst_path);
-            file_paths.push(dst_path.clone());
+            match file {
+                File::Parquet(ParquetFile { id, url, .. }) => {
+                    let dst_path = &table_path.join(format!("{}.snappy.parquet", &id));
+                    let bytes = self.download(url, &dst_path)?;
+                    debug!("Downloaded {} ({} bytes)", dst_path.display(), bytes);
+                    file_paths.push(dst_path.clone());
+                },
+                File::Delta( DeltaFile { id, url, ..}) => {
+                    if let Some(url) = url {
+                        let dst_path = &table_path.join(format!("{}.snappy.parquet", &id));
+                        let bytes = self.download(url, &dst_path)?;
+                        debug!("Downloaded {} ({} bytes)", dst_path.display(), bytes);
+                        file_paths.push(dst_path.clone());
+                    }
+                }, 
+            }
         }
         Ok(file_paths.clone())
     }
@@ -283,7 +296,11 @@ impl Client {
             if !download {
                 let mut file_paths: Vec<PathBuf> = Vec::new();
                 for file in &table_files.files {
-                    let file_path = &table_path.join(format!("{}.snappy.parquet", &file.id));
+                    let file_id = match file {
+                        File::Parquet(ParquetFile { id, ..}) => id,
+                        File::Delta(DeltaFile { id, .. }) => id
+                    };
+                    let file_path = &table_path.join(format!("{}.snappy.parquet", &file_id));
                     if !Path::exists(&file_path) {
                         // File is missing, invalidate cache
                         download = true;
