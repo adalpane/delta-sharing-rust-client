@@ -193,7 +193,7 @@ async fn list_all_table_files() {
     let app = create_mocked_test_app(body, &url, method("POST")).await;
     let files = app
         .client
-        .list_table_files(&table, None, None, None)
+        .list_table_files(&table, None)
         .await
         .unwrap();
 
@@ -264,7 +264,7 @@ async fn get_files() {
 
     assert!(!Path::exists(&expected_path), "File should not exist");
 
-    let files = c.get_files(&table).await.unwrap();
+    let files = c.get_files(&table, None).await.unwrap();
 
     assert_eq!(files.len(), 1, "File count mismatch");
     assert_eq!(files[0], expected_path, "File path mismatch");
@@ -330,11 +330,11 @@ async fn get_dataframe() {
         .unwrap()
         .to_string();
 
-    let df = c.get_dataframe(&table).await.unwrap().collect().unwrap();
+    let df = c.get_dataframe(&table, None).await.unwrap().collect().unwrap();
     assert_eq!(df.shape(), (5, 3), "Dataframe shape mismatch");
 
     // Get the data again, this time it should be served from the local cache (enforced by Expections set on Mocks)
-    let df1 = c.get_dataframe(&table).await.unwrap().collect().unwrap();
+    let df1 = c.get_dataframe(&table, None).await.unwrap().collect().unwrap();
     assert_eq!(df1.shape(), (5, 3), "Dataframe shape mismatch");
     assert_eq!(
         df1.get_row(0).0[1],

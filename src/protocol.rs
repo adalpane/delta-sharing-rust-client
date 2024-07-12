@@ -81,3 +81,9 @@ pub struct TableFiles {
     pub metadata: TableMetadata,
     pub files: Vec<File>,
 }
+
+pub struct FilesRequest {
+    pub predicate_hints: Option<Vec<String>>,
+    pub limit_hint: Option<i32>,
+    pub version: Option<i32>,
+}

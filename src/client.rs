@@ -209,29 +209,26 @@ impl Client {
     pub async fn list_table_files(
         &self,
         table: &Table,
-        predicate_hints: Option<Vec<String>>,
-        limit_hint: Option<i32>,
-        version: Option<i32>,
+        request: Option<FilesRequest>
     ) -> Result<TableFiles, anyhow::Error> {
         let mut map = Map::new();
-        if predicate_hints.is_some() {
+        if let Some(predicate_hints) = request.as_ref().and_then(|r| r.predicate_hints.as_ref()) {
             map.insert(
                 "predicateHints".to_string(),
                 Value::Array(
                     predicate_hints
-                        .map(|hints| hints.iter().map(|s| Value::String(s.to_string()))
-                        .collect::<Vec<_>>())
-                        .unwrap_or_default()
+                        .iter().map(|s| Value::String(s.to_string()))
+                        .collect::<Vec<_>>()
                 ),
             );
         }
-        if let Some(limit_hint) = limit_hint {
+        if let Some(limit_hint) = request.as_ref().and_then(|r| r.limit_hint) {
             map.insert(
                 "limitHint".to_string(),
                 Value::Number(Number::from(limit_hint)),
             );
         }
-        if let Some(version) = version {
+        if let Some(version) = request.as_ref().and_then(|r| r.version) {
             map.insert(
                 "version".to_string(),
                 Value::Number(Number::from(version)),
@@ -319,11 +316,11 @@ impl Client {
         Ok(None)
     }
 
-    pub async fn get_files(&mut self, table: &Table) -> Result<Vec<PathBuf>, anyhow::Error> {
+    pub async fn get_files(&mut self, table: &Table, request: Option<FilesRequest>) -> Result<Vec<PathBuf>, anyhow::Error> {
         let key = table.fully_qualified_name();
         let mut download = true;
         let table_path = Path::new(&self.data_root).join(table.fully_qualified_name());
-        let table_files = self.list_table_files(table, None, None, None).await?;
+        let table_files = self.list_table_files(table, request).await?;
         if let Some(cached) = self.cache.get(&key) {
             download = cached.table_files.metadata != table_files.metadata;
         } else if let Some(cached) = self.load_cached(&table_path, &table_files).await? {
@@ -354,8 +351,8 @@ impl Client {
         Ok(self.cache.get(&key).ok_or(anyhow::anyhow!("Error reading {key} from cache"))?.file_paths.clone())
     }
 
-    pub async fn get_dataframe(&mut self, table: &Table) -> PolarResult<LazyFrame> {
-        self.get_files(&table).await?;
+    pub async fn get_dataframe(&mut self, table: &Table, request: Option<FilesRequest>) -> PolarResult<LazyFrame> {
+        self.get_files(&table, request).await?;
         let table_path = Path::new(&self.data_root).join(table.fully_qualified_name());
         load_parquet_files_as_dataframe(&table_path)
     }

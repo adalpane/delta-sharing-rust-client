@@ -117,11 +117,11 @@ fn get_dataframe() {
         .unwrap()
         .to_string();
 
-    let df = c.get_dataframe(&table).unwrap().collect().unwrap();
+    let df = c.get_dataframe(&table, None).unwrap().collect().unwrap();
     assert_eq!(df.shape(), (5, 3), "Dataframe shape mismatch");
 
     // Get the data again, this time it should be served from the local cache (enforced by Expections set on Mocks)
-    let df1 = c.get_dataframe(&table).unwrap().collect().unwrap();
+    let df1 = c.get_dataframe(&table, None).unwrap().collect().unwrap();
     assert_eq!(df1.shape(), (5, 3), "Dataframe shape mismatch");
     assert_eq!(
         df1.get_row(0).0[1],

@@ -22,7 +22,7 @@ fn main() {
                 shares[0].name
             );
         } else {
-            let res = app.get_dataframe(&tables[0]).unwrap().collect().unwrap();
+            let res = app.get_dataframe(&tables[0], None).unwrap().collect().unwrap();
             println!("Dataframe:\n {}", res);
         }
     }

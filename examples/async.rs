@@ -42,7 +42,7 @@ async fn main() {
             );
         } else {
             let res = app
-                .get_dataframe(&tables[0])
+                .get_dataframe(&tables[0], None)
                 .await
                 .unwrap()
                 .collect()
