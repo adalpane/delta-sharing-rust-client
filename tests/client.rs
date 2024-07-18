@@ -348,8 +348,8 @@ async fn get_dataframe() {
     let df1 = c.get_dataframe(&table, None).await.unwrap().collect().unwrap();
     assert_eq!(df1.shape(), (5, 3), "Dataframe shape mismatch");
     assert_eq!(
-        df1.get_row(0).0[1],
-        polars::datatypes::AnyValue::Utf8("One"),
+        df1.get_row(0).unwrap().0[1],
+        polars::datatypes::AnyValue::String("One"),
         "Row value mismatch"
     );
 }

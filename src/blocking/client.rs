@@ -2,7 +2,7 @@ use crate::protocol::*;
 use crate::reader::*;
 use crate::utils::*;
 use parquet::data_type::AsBytes;
-use polars::prelude::{LazyFrame, Result as PolarResult};
+use polars::prelude::LazyFrame;
 use reqwest::{header, header::HeaderValue};
 use serde_json::{Map, Number, Value};
 use std::collections::HashMap;
@@ -268,9 +268,9 @@ impl Client {
                     debug!("Downloaded {} ({} bytes)", dst_path.display(), bytes);
                     file_paths.push(dst_path.clone());
                 },
-                File::Delta( DeltaFile { id, url, ..}) => {
-                    if let Some(url) = url {
-                        let dst_path = &table_path.join(format!("{}.snappy.parquet", &id));
+		File::Delta( delta_file) => {
+                    if let Some(url) = delta_file.get_url() {
+                        let dst_path = &table_path.join(format!("{}.snappy.parquet", &delta_file.id));
                         let bytes = self.download(url, &dst_path)?;
                         debug!("Downloaded {} ({} bytes)", dst_path.display(), bytes);
                         file_paths.push(dst_path.clone());
@@ -352,9 +352,10 @@ impl Client {
         Ok(self.cache.get(&key).ok_or(anyhow::anyhow!("Error reading {key} from cache"))?.file_paths.clone())
     }
 
-    pub fn get_dataframe(&mut self, table: &Table, request: Option<FilesRequest>) -> PolarResult<LazyFrame> {
+    pub fn get_dataframe(&mut self, table: &Table, request: Option<FilesRequest>) -> Result<LazyFrame, anyhow::Error> {
         self.get_files(&table, request)?;
         let table_path = Path::new(&self.data_root).join(table.fully_qualified_name());
         load_parquet_files_as_dataframe(&table_path)
+            .map_err(|e| anyhow::anyhow!("Error loading parquet files: {e}"))
     }
 }
