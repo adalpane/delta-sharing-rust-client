@@ -304,7 +304,7 @@ impl Client {
                     if !Path::exists(&file_path) {
                         // File is missing, invalidate cache
                         download = true;
-                        fs::remove_dir(&table_path).map_err(|e| anyhow::anyhow!("Error invalidating cache: {e}"))?;
+                        fs::remove_dir_all(&table_path).map_err(|e| anyhow::anyhow!("Error invalidating cache: {e}"))?;
                         break;
                     }
                     file_paths.push(file_path.clone());
