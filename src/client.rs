@@ -278,19 +278,20 @@ impl Client {
         }
         fs::create_dir_all(&table_path).map_err(|e| anyhow::anyhow!("Error creating table path: {e}"))?;
         let mut file_paths: Vec<PathBuf> = Vec::new();
-        for file in table_files.files.clone() {
+        let count = table_files.files.len();
+        for (index, file) in table_files.files.clone().into_iter().enumerate() {
             match file {
                 File::Parquet(ParquetFile { id, url, .. }) => {
                     let dst_path = &table_path.join(format!("{}.snappy.parquet", &id));
                     let bytes = self.download(url, &dst_path).await?;
-                    debug!("Downloaded {} ({} bytes)", dst_path.display(), bytes);
+                    debug!("Downloaded {}/{} {} ({} bytes)", index+1, count, dst_path.display(), bytes);
                     file_paths.push(dst_path.clone());
                 },
                 File::Delta( delta_file) => {
                     if let Some(url) = delta_file.get_url() {
                         let dst_path = &table_path.join(format!("{}.snappy.parquet", &delta_file.id));
                         let bytes = self.download(url, &dst_path).await?;
-                        debug!("Downloaded {} ({} bytes)", dst_path.display(), bytes);
+                        debug!("Downloaded {}/{} {} ({} bytes)", index+1, count, dst_path.display(), bytes);
                         file_paths.push(dst_path.clone())
                     }
                 }, 

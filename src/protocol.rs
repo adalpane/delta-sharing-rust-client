@@ -120,7 +120,7 @@ pub struct DeltaFile {
 
 impl DeltaFile {
     pub fn get_url(&self) -> Option<String> {
-        if let Some(value) = self.delta_single_action.get("path") {
+        if let Some(value) = self.delta_single_action.get("add").and_then(|add| add.get("path")) {
             return value.as_str().map(|v| v.to_string());
         } else {
             return None;
