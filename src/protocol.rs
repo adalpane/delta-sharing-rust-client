@@ -42,20 +42,20 @@ pub struct DeltaProtocol {
     pub min_reader_version: i32,
     pub min_writer_version: i32,
     pub reader_features: Vec<String>,
-    pub writer_features: Vec<String>
+    pub writer_features: Vec<String>,
 }
 
 #[derive(Deserialize, Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum Protocol {
-    Parquet { 
+    Parquet {
         #[serde(rename = "minReaderVersion")]
-        min_reader_version: i32 
+        min_reader_version: i32,
     },
-    Delta { 
+    Delta {
         #[serde(rename = "deltaProtocol")]
-        delta_protocol: DeltaProtocol 
-    }
+        delta_protocol: DeltaProtocol,
+    },
 }
 
 #[derive(Deserialize, Debug, Clone, PartialEq, Serialize)]
@@ -81,14 +81,14 @@ pub struct ParquetMetadata {
 pub struct DeltaMetadata {
     pub size: usize,
     pub num_files: usize,
-    pub delta_metadata: ParquetMetadata
+    pub delta_metadata: ParquetMetadata,
 }
 
 #[derive(Deserialize, Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum Metadata {
     Parquet(ParquetMetadata),
-    Delta(DeltaMetadata)
+    Delta(DeltaMetadata),
 }
 
 #[derive(Deserialize, Debug, Clone, PartialEq, Serialize)]
@@ -120,7 +120,11 @@ pub struct DeltaFile {
 
 impl DeltaFile {
     pub fn get_url(&self) -> Option<String> {
-        if let Some(value) = self.delta_single_action.get("add").and_then(|add| add.get("path")) {
+        if let Some(value) = self
+            .delta_single_action
+            .get("add")
+            .and_then(|add| add.get("path"))
+        {
             return value.as_str().map(|v| v.to_string());
         } else {
             return None;
@@ -132,7 +136,7 @@ impl DeltaFile {
 #[serde(untagged)]
 pub enum File {
     Parquet(ParquetFile),
-    Delta(DeltaFile)
+    Delta(DeltaFile),
 }
 
 #[derive(Deserialize, Debug, Clone, PartialEq, Serialize)]

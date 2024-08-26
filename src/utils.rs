@@ -41,5 +41,3 @@ pub struct FileCache {
     pub table_files: TableFiles,
     pub file_paths: Vec<PathBuf>,
 }
-
-

@@ -114,11 +114,20 @@ async fn get_table_metadata() {
 
     match meta.protocol {
         Protocol::Delta { .. } => assert!(false, "Wrong protocol deserialization"),
-        Protocol::Parquet { min_reader_version } => assert_eq!(min_reader_version, 1, "Protocol mismatch")
+        Protocol::Parquet { min_reader_version } => {
+            assert_eq!(min_reader_version, 1, "Protocol mismatch")
+        }
     };
     match meta.metadata {
         Metadata::Delta { .. } => assert!(false, "Wrong metadata deserialization"),
-        Metadata::Parquet ( ParquetMetadata { id, format, name, partition_columns, configuration, .. }) => {
+        Metadata::Parquet(ParquetMetadata {
+            id,
+            format,
+            name,
+            partition_columns,
+            configuration,
+            ..
+        }) => {
             assert_eq!(
                 id, "cf9c9342-b773-4c7b-a217-037d02ffe5d8",
                 "Metadata ID mismatch"
@@ -127,15 +136,8 @@ async fn get_table_metadata() {
                 format.provider, "parquet",
                 "Metadata format provider mismatch"
             );
-            assert_eq!(
-                name, None,
-                "Metadata name value should be missing"
-            );
-            assert_eq!(
-                partition_columns.len(),
-                0,
-                "There should be no partitions"
-            );
+            assert_eq!(name, None, "Metadata name value should be missing");
+            assert_eq!(partition_columns.len(), 0, "There should be no partitions");
             assert_eq!(
                 configuration["conf_1_name"], "conf_1_value",
                 "Configuration value expected"
@@ -199,16 +201,12 @@ async fn list_all_table_files() {
         table.share, table.schema, table.name
     );
     let app = create_mocked_test_app(body, &url, method("POST")).await;
-    let files = app
-        .client
-        .list_table_files(&table, None)
-        .await
-        .unwrap();
+    let files = app.client.list_table_files(&table, None).await.unwrap();
 
     assert_eq!(files.files.len(), 2, "File count mismatch");
     match &files.files[1] {
-        File::Parquet(ParquetFile { id, ..}) => assert_eq!(id, "2", "File id mismatch"),
-        File::Delta(DeltaFile { .. }) => assert!(false, "Wrong file deserialization")
+        File::Parquet(ParquetFile { id, .. }) => assert_eq!(id, "2", "File id mismatch"),
+        File::Delta(DeltaFile { .. }) => assert!(false, "Wrong file deserialization"),
     };
 }
 
@@ -341,11 +339,21 @@ async fn get_dataframe() {
         .unwrap()
         .to_string();
 
-    let df = c.get_dataframe(&table, None).await.unwrap().collect().unwrap();
+    let df = c
+        .get_dataframe(&table, None)
+        .await
+        .unwrap()
+        .collect()
+        .unwrap();
     assert_eq!(df.shape(), (5, 3), "Dataframe shape mismatch");
 
     // Get the data again, this time it should be served from the local cache (enforced by Expections set on Mocks)
-    let df1 = c.get_dataframe(&table, None).await.unwrap().collect().unwrap();
+    let df1 = c
+        .get_dataframe(&table, None)
+        .await
+        .unwrap()
+        .collect()
+        .unwrap();
     assert_eq!(df1.shape(), (5, 3), "Dataframe shape mismatch");
     assert_eq!(
         df1.get_row(0).unwrap().0[1],
